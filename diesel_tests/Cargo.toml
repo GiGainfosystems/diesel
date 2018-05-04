@@ -9,7 +9,7 @@ build = "build.rs"
 diesel = { path = "../diesel", default-features = false }
 diesel_migrations = { version = "1.2.0" }
 dotenv = ">=0.8, <0.11"
-diesel-oci = { path = "/home/paul/dev/diesel-oci-github", optional=true}
+diesel-oci = { path = "/home/paul/dev/diesel-oci-github"}
 
 [dependencies]
 assert_matches = "1.0.1"
