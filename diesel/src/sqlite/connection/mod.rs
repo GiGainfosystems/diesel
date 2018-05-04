@@ -17,6 +17,7 @@ use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
+use migration::MigrationConnection;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_builder::*;
 use result::*;
@@ -105,6 +106,8 @@ impl Connection for SqliteConnection {
         &self.transaction_manager
     }
 }
+
+impl MigrationConnection for SqliteConnection {}
 
 impl SqliteConnection {
     /// Run a transaction with `BEGIN IMMEDIATE`
@@ -305,8 +308,7 @@ mod tests {
                     } else {
                         c.to_uppercase().to_string()
                     }
-                })
-                .collect::<String>()
+                }).collect::<String>()
         }).unwrap();
 
         let mapped_string = ::select(fun_case("foobar"))
