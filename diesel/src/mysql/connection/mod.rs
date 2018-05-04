@@ -10,6 +10,7 @@ use super::backend::Mysql;
 use super::bind_collector::MysqlBindCollector;
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
+use migration::MigrationConnection;
 use query_builder::*;
 use result::*;
 use sql_types::HasSqlType;
@@ -111,6 +112,8 @@ impl Connection for MysqlConnection {
         &self.transaction_manager
     }
 }
+
+impl MigrationConnection for MysqlConnection {}
 
 impl MysqlConnection {
     fn prepare_query<T>(&self, source: &T) -> QueryResult<MaybeCached<Statement>>
