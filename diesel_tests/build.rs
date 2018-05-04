@@ -1,11 +1,13 @@
 extern crate diesel;
 extern crate diesel_migrations as migrations;
 extern crate dotenv;
+extern crate diesel_oci;
+use diesel_oci::oracle::connection::OciConnection;
 use self::diesel::*;
 use self::dotenv::dotenv;
 use std::{env, io};
 
-#[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
+#[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres", feature = "oracle")))]
 compile_error!(
     "At least one backend must be used to test this crate.\n \
      Pass argument `--features \"<backend>\"` with one or more of the following backends, \
@@ -31,6 +33,12 @@ fn connection() -> MysqlConnection {
     MysqlConnection::establish(&database_url).unwrap()
 }
 
+#[cfg(feature = "oracle")]
+fn connection() -> OciConnection {
+    let database_url = database_url_from_env("OCI_DATABASE_URL");
+    OciConnection::establish(&database_url).unwrap()
+}
+
 #[cfg(feature = "postgres")]
 const MIGRATION_SUBDIR: &str = "postgresql";
 
@@ -39,6 +47,9 @@ const MIGRATION_SUBDIR: &str = "sqlite";
 
 #[cfg(feature = "mysql")]
 const MIGRATION_SUBDIR: &str = "mysql";
+
+#[cfg(feature = "oracle")]
+const MIGRATION_SUBDIR: &str = "oracle";
 
 fn database_url_from_env(backend_specific_env_var: &str) -> String {
     dotenv().ok();

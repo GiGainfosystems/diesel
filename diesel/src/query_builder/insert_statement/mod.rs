@@ -240,6 +240,48 @@ where
     }
 }
 
+#[cfg(feature = "oracle")]
+#[deprecated(since = "1.2.0", note = "Use `<&'a [U] as Insertable<T>>::Values` instead")]
+impl<'a, T, U, Op> ExecuteDsl<OciConnection> for InsertStatement<T, &'a [U], Op>
+    where
+        &'a U: Insertable<T>,
+        InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>: QueryFragment<Oracle>,
+        T: Copy,
+        Op: Copy,
+{
+    fn execute(query: Self, conn: &OciConnection) -> QueryResult<usize> {
+        use connection::Connection;
+        conn.transaction(|| {
+            let mut result = 0;
+            for record in query.records {
+                result += InsertStatement::new(
+                    query.target,
+                    record.values(),
+                    query.operator,
+                    query.returning,
+                ).execute(conn)?;
+            }
+            Ok(result)
+        })
+    }
+}
+
+#[cfg(feature = "oracle")]
+impl<'a, T, U, Op> ExecuteDsl<OciConnection> for InsertStatement<T, BatchInsert<'a, U, T>, Op>
+    where
+        InsertStatement<T, &'a [U], Op>: ExecuteDsl<OciConnection>,
+{
+    fn execute(query: Self, conn: &OciConnection) -> QueryResult<usize> {
+        InsertStatement::new(
+            query.target,
+            query.records.records,
+            query.operator,
+            query.returning,
+        ).execute(conn)
+    }
+}
+
+
 #[cfg(feature = "sqlite")]
 impl<T, U, Op> ExecuteDsl<SqliteConnection>
     for InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>>, Op>

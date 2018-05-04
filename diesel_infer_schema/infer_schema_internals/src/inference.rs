@@ -21,6 +21,8 @@ pub(crate) enum InferConnection {
     Pg(PgConnection),
     #[cfg(feature = "mysql")]
     Mysql(MysqlConnection),
+    #[cfg(feature = "oracle")]
+    Oci(OciConnection),
 }
 
 pub fn load_table_names(
@@ -54,6 +56,8 @@ pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection
         }
         #[cfg(feature = "sqlite")]
         _ => establish_real_connection(database_url).map(InferConnection::Sqlite),
+        #[cfg(feature = "oracle")]
+        _ => establish_real_connection(database_url).map(InferConnection::Oracle),
         #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
         _ => Err(format!(
             "{} is not a valid PG database URL. \
@@ -66,11 +70,11 @@ pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection
              It must start with mysql://",
             database_url,
         ).into()),
-        #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
+        #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres", feature = "oracle")))]
         _ => compile_error!(
             "At least one backend must be specified for use with this crate.\n \
              In Cargo.toml, please specify `features = [\"postgresql\"]`, \
-             `features = [\"mysql\"]`, or `features = [\"sqlite\"]`\n\n \
+             `features = [\"mysql\"]`, `features = [\"oracle\"]`, or `features = [\"sqlite\"]`\n\n \
              ex. `infer_schema_internals { features = [\"postgres\"] }`\n "
         ),
     }
