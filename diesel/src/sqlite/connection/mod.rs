@@ -46,6 +46,8 @@ impl SimpleConnection for SqliteConnection {
     }
 }
 
+impl MigrationConnection for SqliteConnection {}
+
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
     type TransactionManager = AnsiTransactionManager;
