@@ -70,6 +70,7 @@ pub fn output_schema(
         tables: table_data,
         fk_constraints: foreign_keys,
         include_docs: config.with_docs,
+        import_types: config.import_types(),
     };
 
     if let Some(schema_name) = config.schema_name() {
@@ -96,7 +97,7 @@ pub fn output_schema(
     Ok(())
 }
 
-struct ModuleDefinition<'a>(&'a str, TableDefinitions);
+struct ModuleDefinition<'a>(&'a str, TableDefinitions<'a>);
 
 impl<'a> Display for ModuleDefinition<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -110,20 +111,21 @@ impl<'a> Display for ModuleDefinition<'a> {
     }
 }
 
-struct TableDefinitions {
+struct TableDefinitions<'a> {
     tables: Vec<TableData>,
     fk_constraints: Vec<ForeignKeyConstraint>,
     include_docs: bool,
+    import_types: Option<&'a [String]>,
 }
 
-impl Display for TableDefinitions {
+impl<'a> Display for TableDefinitions<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let mut is_first = true;
         for table in &self.tables {
             if is_first {
                 is_first = false;
             } else {
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
             writeln!(
                 f,
@@ -131,12 +133,13 @@ impl Display for TableDefinitions {
                 TableDefinition {
                     table,
                     include_docs: self.include_docs,
+                    import_types: self.import_types,
                 }
             )?;
         }
 
         if !self.fk_constraints.is_empty() {
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
 
         for foreign_key in &self.fk_constraints {
@@ -147,7 +150,7 @@ impl Display for TableDefinitions {
             write!(f, "\nallow_tables_to_appear_in_same_query!(")?;
             {
                 let mut out = PadAdapter::new(f);
-                write!(out, "\n")?;
+                writeln!(out)?;
                 for table in &self.tables {
                     writeln!(out, "{},", table.name.name)?;
                 }
@@ -161,6 +164,7 @@ impl Display for TableDefinitions {
 
 struct TableDefinition<'a> {
     table: &'a TableData,
+    import_types: Option<&'a [String]>,
     include_docs: bool,
 }
 
@@ -169,7 +173,14 @@ impl<'a> Display for TableDefinition<'a> {
         write!(f, "table! {{")?;
         {
             let mut out = PadAdapter::new(f);
-            write!(out, "\n")?;
+            writeln!(out)?;
+
+            if let Some(types) = self.import_types {
+                for import in types {
+                    writeln!(out, "use {};", import)?;
+                }
+                writeln!(out)?;
+            }
 
             if self.include_docs {
                 for d in self.table.docs.lines() {
@@ -249,7 +260,7 @@ struct PadAdapter<'a, 'b: 'a> {
 impl<'a, 'b: 'a> PadAdapter<'a, 'b> {
     fn new(fmt: &'a mut Formatter<'b>) -> PadAdapter<'a, 'b> {
         PadAdapter {
-            fmt: fmt,
+            fmt,
             on_newline: false,
         }
     }

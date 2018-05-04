@@ -10,6 +10,7 @@ use std::os::raw as libc;
 
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
+use migration::MigrationConnection;
 use pg::{Pg, PgMetadataLookup, TransactionBuilder};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
@@ -106,6 +107,8 @@ impl Connection for PgConnection {
         &self.transaction_manager
     }
 }
+
+impl MigrationConnection for PgConnection {}
 
 impl PgConnection {
     /// Build a transaction, specifying additional details such as isolation level
@@ -233,7 +236,7 @@ mod tests {
     fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
         let connection = connection();
 
-        sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
+        sql_function!(fn lower(x: VarChar) -> VarChar);
         let hi = "HI".into_sql::<VarChar>();
         let query = ::select(hi).into_boxed::<Pg>();
         let query2 = ::select(lower(hi)).into_boxed::<Pg>();
