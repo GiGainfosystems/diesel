@@ -1,1 +1,1 @@
-DROP TABLE citext_table;
+DROP TABLE citext_table

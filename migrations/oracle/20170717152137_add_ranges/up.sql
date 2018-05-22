@@ -6,3 +6,5 @@
 --    tstz TSTZRANGE NOT NULL,
 --    date DATERANGE NOT NULL
 --)
+
+create table test2 ( id number(38))
