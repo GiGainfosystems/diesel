@@ -75,4 +75,7 @@ pub trait MigrationConnection: Connection {
          version VARCHAR(50) PRIMARY KEY NOT NULL,\
          run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\
          )";
+
+    /// this is a function which works around the missing if not exists in oracle
+    const CREATE_MIGRATIONS_FUNCTION: &'static str = "";
 }

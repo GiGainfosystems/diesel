@@ -254,6 +254,8 @@ pub fn setup_database<Conn: MigrationConnection>(conn: &Conn) -> QueryResult<usi
 fn create_schema_migrations_table_if_needed<Conn: MigrationConnection>(
     conn: &Conn,
 ) -> QueryResult<usize> {
+    #[cfg(feature = "oracle")]
+    conn.execute(<Conn as ::diesel::migration::MigrationConnection>::CREATE_MIGRATIONS_FUNCTION)?;
     conn.execute(<Conn as ::diesel::migration::MigrationConnection>::CREATE_MIGRATIONS_TABLE)
 
 }
