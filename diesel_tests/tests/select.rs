@@ -109,7 +109,7 @@ table! {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature="oracle")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use self::select::dsl::*;
 
@@ -136,7 +136,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature="oracle")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
     let connection = connection();
     drop_table_cascade(&connection, "users");
@@ -191,7 +191,7 @@ table! {
     }
 }
 
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(any(feature = "sqlite", feature="oracle")))]
 #[test]
 fn select_for_update_locks_selected_rows() {
     use self::users_select_for_update::dsl::*;

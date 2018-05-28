@@ -60,7 +60,7 @@ mod eager_loading_with_string_keys {
     }
 
     #[test]
-    #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+    #[cfg(not(any(feature = "mysql", feature="oracle")))] // FIXME: Figure out how to handle tests that modify schema
     fn eager_loading_associations_for_multiple_records() {
         let connection = connection();
         drop_table_cascade(&connection, "users");
@@ -261,7 +261,7 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature="oracle")))] // FIXME: Figure out how to handle tests that modify schema
 fn custom_foreign_key() {
     use diesel::*;
     use diesel::connection::SimpleConnection;

@@ -24,3 +24,5 @@ lint = ["clippy"]
 postgres = ["infer_schema_internals/postgres"]
 sqlite = ["infer_schema_internals/sqlite"]
 mysql = ["infer_schema_internals/mysql"]
+oralce = ["infer_schema_internals/postgres"]
+

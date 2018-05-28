@@ -38,6 +38,8 @@ pub fn load_table_names(
         InferConnection::Pg(c) => ::information_schema::load_table_names(&c, schema_name),
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(c) => ::information_schema::load_table_names(&c, schema_name),
+        #[cfg(feature = "oracle")]
+        InferConnection::Oracle(c) => ::information_schema::load_table_names(&c, schema_name),
     }
 }
 
@@ -58,13 +60,13 @@ pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection
         _ => establish_real_connection(database_url).map(InferConnection::Sqlite),
         #[cfg(feature = "oracle")]
         _ => establish_real_connection(database_url).map(InferConnection::Oracle),
-        #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
+        #[cfg(all(feature = "postgres", not(any(feature = "sqlite", feature="mysql", feature="oracle"))))]
         _ => Err(format!(
             "{} is not a valid PG database URL. \
              It must start with postgres:// or postgresql://",
             database_url,
         ).into()),
-        #[cfg(all(feature = "mysql", not(any(feature = "sqlite", feature = "postgres"))))]
+        #[cfg(all(feature = "mysql", not(any(feature = "sqlite", feature = "postgres", feautre="oracle"))))]
         _ => Err(format!(
             "{} is not a valid MySQL database URL. \
              It must start with mysql://",

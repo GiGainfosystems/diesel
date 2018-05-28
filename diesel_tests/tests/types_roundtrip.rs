@@ -1,4 +1,4 @@
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature="oracle"))]
 extern crate bigdecimal;
 extern crate chrono;
 
@@ -89,6 +89,7 @@ test_round_trip!(f32_roundtrips, Float, f32);
 test_round_trip!(f64_roundtrips, Double, f64);
 test_round_trip!(string_roundtrips, VarChar, String);
 test_round_trip!(text_roundtrips, Text, String);
+#[cfg(not(feature="oracle"))]
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>);
 test_round_trip!(bool_roundtrips, Bool, bool);
 

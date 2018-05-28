@@ -22,6 +22,7 @@ default = []
 postgres = ["diesel/postgres", "uses_information_schema"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql", "uses_information_schema"]
+oracle = []
 uses_information_schema = []
 lint = ["clippy"]
 

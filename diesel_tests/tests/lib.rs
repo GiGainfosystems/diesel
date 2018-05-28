@@ -12,6 +12,8 @@ extern crate diesel_infer_schema;
 extern crate diesel_migrations;
 extern crate dotenv;
 extern crate quickcheck;
+#[cfg(feature = "oracle")]
+extern crate diesel_oci;
 
 #[cfg(not(feature = "sqlite"))]
 mod annotations;
@@ -44,7 +46,7 @@ mod schema;
 mod schema_dsl;
 mod schema_inference;
 mod select;
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature="oracle")))] // FIXME: Figure out how to handle tests that modify schema
 mod transactions;
 mod types;
 mod types_roundtrip;

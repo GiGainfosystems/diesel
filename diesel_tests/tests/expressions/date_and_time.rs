@@ -129,7 +129,7 @@ fn now_executes_sql_function_now() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature="oracle")))] // FIXME: Figure out how to handle tests that modify schema
 fn date_uses_sql_function_date() {
     use self::has_timestamps::dsl::*;
 
@@ -265,7 +265,7 @@ fn adding_interval_to_nullable_things() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature="oracle")))] // FIXME: Figure out how to handle tests that modify schema
 fn setup_test_table(conn: &TestConnection) {
     use schema_dsl::*;
 
