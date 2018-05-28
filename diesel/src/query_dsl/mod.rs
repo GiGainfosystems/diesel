@@ -36,7 +36,8 @@ mod locking_dsl;
 pub mod select_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
-mod save_changes_dsl;
+#[doc(hidden)]
+pub mod save_changes_dsl;
 mod single_value_dsl;
 mod offset_dsl;
 mod order_dsl;
