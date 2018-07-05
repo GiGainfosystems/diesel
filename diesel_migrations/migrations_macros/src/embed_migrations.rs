@@ -1,8 +1,8 @@
-use quote;
 use syn;
+use quote;
 
-use migrations::migration_directory_from_given_path;
 use migrations_internals::{migration_paths_in_directory, version_from_path};
+use migrations::migration_directory_from_given_path;
 use std::error::Error;
 use std::path::Path;
 
@@ -66,6 +66,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
         extern crate diesel_migrations;
 
         use self::diesel_migrations::*;
+        use self::diesel::migration::Migration;
         use self::diesel::connection::SimpleConnection;
         use std::io;
 

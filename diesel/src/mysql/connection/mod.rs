@@ -3,15 +3,16 @@ mod raw;
 mod stmt;
 mod url;
 
+use connection::*;
+use deserialize::{Queryable, QueryableByName};
+use migration::MigrationConnection;
+use query_builder::*;
+use query_builder::bind_collector::RawBytesBindCollector;
+use result::*;
 use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
-use super::bind_collector::MysqlBindCollector;
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use query_builder::*;
-use result::*;
 use sql_types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -71,7 +72,7 @@ impl Connection for MysqlConnection {
 
         let mut stmt = try!(self.prepare_query(&source.as_query()));
         let mut metadata = Vec::new();
-        Mysql::mysql_row_metadata(&mut metadata, &());
+        Mysql::row_metadata(&mut metadata, &());
         let results = unsafe { stmt.results(metadata)? };
         results.map(|mut row| {
             U::Row::build_from_row(&mut row)
@@ -111,6 +112,8 @@ impl Connection for MysqlConnection {
     }
 }
 
+impl MigrationConnection for MysqlConnection {}
+
 impl MysqlConnection {
     fn prepare_query<T>(&self, source: &T) -> QueryResult<MaybeCached<Statement>>
     where
@@ -118,9 +121,11 @@ impl MysqlConnection {
     {
         let mut stmt = self.statement_cache
             .cached_statement(source, &[], |sql| self.raw_connection.prepare(sql))?;
-        let mut bind_collector = MysqlBindCollector::new();
+        let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
         try!(source.collect_binds(&mut bind_collector, &()));
-        try!(stmt.bind(bind_collector.binds));
+        let metadata = bind_collector.metadata;
+        let binds = bind_collector.binds;
+        try!(stmt.bind(metadata.into_iter().zip(binds)));
         Ok(stmt)
     }
 

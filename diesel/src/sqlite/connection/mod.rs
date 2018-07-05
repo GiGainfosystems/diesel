@@ -1,26 +1,25 @@
 extern crate libsqlite3_sys as ffi;
 
-mod functions;
 #[doc(hidden)]
 pub mod raw;
-mod serialized_value;
-mod sqlite_value;
-mod statement_iterator;
 mod stmt;
+mod statement_iterator;
+mod sqlite_value;
 
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
+use std::rc::Rc;
 
+use connection::*;
+use deserialize::{Queryable, QueryableByName};
+use migration::MigrationConnection;
+use query_builder::*;
+use query_builder::bind_collector::RawBytesBindCollector;
+use result::*;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use query_builder::bind_collector::RawBytesBindCollector;
-use query_builder::*;
-use result::*;
-use serialize::ToSql;
 use sql_types::HasSqlType;
 use sqlite::Sqlite;
 
@@ -29,7 +28,7 @@ use sqlite::Sqlite;
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
-    raw_connection: RawConnection,
+    raw_connection: Rc<RawConnection>,
     transaction_manager: AnsiTransactionManager,
 }
 
@@ -51,7 +50,7 @@ impl Connection for SqliteConnection {
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         RawConnection::establish(database_url).map(|conn| SqliteConnection {
             statement_cache: StatementCache::new(),
-            raw_connection: conn,
+            raw_connection: Rc::new(conn),
             transaction_manager: AnsiTransactionManager::new(),
         })
     }
@@ -104,6 +103,8 @@ impl Connection for SqliteConnection {
         &self.transaction_manager
     }
 }
+
+impl MigrationConnection for SqliteConnection {}
 
 impl SqliteConnection {
     /// Run a transaction with `BEGIN IMMEDIATE`
@@ -211,22 +212,6 @@ impl SqliteConnection {
             Statement::prepare(&self.raw_connection, sql)
         })
     }
-
-    #[doc(hidden)]
-    pub fn register_sql_function<ArgsSqlType, RetSqlType, Args, Ret, F>(
-        &self,
-        fn_name: &str,
-        deterministic: bool,
-        f: F,
-    ) -> QueryResult<()>
-    where
-        F: FnMut(Args) -> Ret + Send + 'static,
-        Args: Queryable<ArgsSqlType, Sqlite>,
-        Ret: ToSql<RetSqlType, Sqlite>,
-        Sqlite: HasSqlType<RetSqlType>,
-    {
-        functions::register(&self.raw_connection, fn_name, deterministic, f)
-    }
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {
@@ -235,9 +220,9 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use dsl::sql;
     use prelude::*;
+    use super::*;
     use sql_types::Integer;
 
     #[test]
@@ -287,57 +272,5 @@ mod tests {
 
         assert_eq!(Ok(true), query.get_result(&connection));
         assert_eq!(1, connection.statement_cache.len());
-    }
-
-    use sql_types::Text;
-    sql_function!(fn fun_case(x: Text) -> Text);
-
-    #[test]
-    fn register_custom_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        fun_case::register_impl(&connection, |x: String| {
-            x.chars()
-                .enumerate()
-                .map(|(i, c)| {
-                    if i % 2 == 0 {
-                        c.to_lowercase().to_string()
-                    } else {
-                        c.to_uppercase().to_string()
-                    }
-                })
-                .collect::<String>()
-        }).unwrap();
-
-        let mapped_string = ::select(fun_case("foobar"))
-            .get_result::<String>(&connection)
-            .unwrap();
-        assert_eq!("fOoBaR", mapped_string);
-    }
-
-    sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
-
-    #[test]
-    fn register_multiarg_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        my_add::register_impl(&connection, |x: i32, y: i32| x + y).unwrap();
-
-        let added = ::select(my_add(1, 2)).get_result::<i32>(&connection);
-        assert_eq!(Ok(3), added);
-    }
-
-    sql_function!(fn add_counter(x: Integer) -> Integer);
-
-    #[test]
-    fn register_nondeterministic_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        let mut y = 0;
-        add_counter::register_nondeterministic_impl(&connection, move |x: i32| {
-            y += 1;
-            x + y
-        }).unwrap();
-
-        let added = ::select((add_counter(1), add_counter(1), add_counter(1)))
-            .get_result::<(i32, i32, i32)>(&connection);
-        assert_eq!(Ok((2, 3, 4)), added);
     }
 }
