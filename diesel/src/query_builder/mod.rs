@@ -51,6 +51,15 @@ pub use self::update_statement::{
     AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
 };
 
+#[doc(hidden)]
+pub use self::select_clause::SelectClauseQueryFragment;
+
+#[doc(hidden)]
+pub use self::offset_clause::{NoOffsetClause, OffsetClause};
+
+#[doc(hidden)]
+pub use self::limit_clause::{LimitClause, NoLimitClause};
+
 pub(crate) use self::insert_statement::ColumnList;
 
 use std::error::Error;

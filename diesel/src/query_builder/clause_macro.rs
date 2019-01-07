@@ -9,6 +9,7 @@ macro_rules! simple_clause {
         use super::{QueryFragment, AstPass};
 
         #[derive(Debug, Clone, Copy, QueryId)]
+        #[doc(hidden)]
         pub struct $no_clause;
 
         impl<DB: Backend> QueryFragment<DB> for $no_clause {
@@ -18,6 +19,7 @@ macro_rules! simple_clause {
         }
 
         #[derive(Debug, Clone, Copy, QueryId)]
+        #[doc(hidden)]
         pub struct $clause<Expr>(pub Expr);
 
         impl<Expr, DB> QueryFragment<DB> for $clause<Expr> where

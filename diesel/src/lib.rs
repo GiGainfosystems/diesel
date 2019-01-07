@@ -1,3 +1,4 @@
+#![feature(specialization)]
 //! # Diesel
 //!
 //! Diesel is an ORM and query builder designed to reduce the boilerplate for database interactions.

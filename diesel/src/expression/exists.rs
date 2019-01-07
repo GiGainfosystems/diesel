@@ -34,7 +34,7 @@ pub fn exists<T>(query: T) -> Exists<T> {
 }
 
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct Exists<T>(Subselect<T, ()>);
+pub struct Exists<T>(pub Subselect<T, ()>);
 
 impl<T> Expression for Exists<T>
 where
@@ -50,7 +50,7 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    default fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("EXISTS (");
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");

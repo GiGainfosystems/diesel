@@ -26,6 +26,7 @@ where
     type SelectClauseSqlType = <QS::DefaultSelection as Expression>::SqlType;
 }
 
+#[doc(hidden)]
 pub trait SelectClauseQueryFragment<QS, DB: Backend> {
     fn walk_ast(&self, source: &QS, pass: AstPass<DB>) -> QueryResult<()>;
 }
