@@ -47,15 +47,15 @@ pub struct SelectStatement<
     GroupBy = NoGroupByClause,
     Locking = NoLockingClause,
 > {
-    pub(crate) select: Select,
-    pub(crate) from: From,
-    pub(crate) distinct: Distinct,
-    pub(crate) where_clause: Where,
-    pub(crate) order: Order,
-    pub(crate) limit: Limit,
-    pub(crate) offset: Offset,
-    pub(crate) group_by: GroupBy,
-    pub(crate) locking: Locking,
+    pub select: Select,
+    pub from: From,
+    pub distinct: Distinct,
+    pub where_clause: Where,
+    pub order: Order,
+    pub limit: Limit,
+    pub offset: Offset,
+    pub group_by: GroupBy,
+    pub locking: Locking,
 }
 
 impl<F, S, D, W, O, L, Of, G, LC> SelectStatement<F, S, D, W, O, L, Of, G, LC> {
@@ -116,6 +116,39 @@ where
     type SqlType = S::SelectClauseSqlType;
 }
 
+#[cfg(feature = "unstable")]
+impl<F, S, D, W, O, L, Of, G, LC, DB> QueryFragment<DB>
+    for SelectStatement<F, S, D, W, O, L, Of, G, LC>
+where
+    DB: Backend,
+    S: SelectClauseQueryFragment<F, DB>,
+    F: QuerySource,
+    F::FromClause: QueryFragment<DB>,
+    D: QueryFragment<DB>,
+    W: QueryFragment<DB>,
+    O: QueryFragment<DB>,
+    L: QueryFragment<DB>,
+    Of: QueryFragment<DB>,
+    G: QueryFragment<DB>,
+    LC: QueryFragment<DB>,
+{
+    default fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.push_sql("SELECT ");
+        self.distinct.walk_ast(out.reborrow())?;
+        self.select.walk_ast(&self.from, out.reborrow())?;
+        out.push_sql(" FROM ");
+        self.from.from_clause().walk_ast(out.reborrow())?;
+        self.where_clause.walk_ast(out.reborrow())?;
+        self.group_by.walk_ast(out.reborrow())?;
+        self.order.walk_ast(out.reborrow())?;
+        self.limit.walk_ast(out.reborrow())?;
+        self.offset.walk_ast(out.reborrow())?;
+        self.locking.walk_ast(out.reborrow())?;
+        Ok(())
+    }
+}
+
+#[cfg(not(feature = "unstable"))]
 impl<F, S, D, W, O, L, Of, G, LC, DB> QueryFragment<DB>
     for SelectStatement<F, S, D, W, O, L, Of, G, LC>
 where

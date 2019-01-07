@@ -115,8 +115,6 @@ impl Connection for SqliteConnection {
     }
 }
 
-impl MigrationConnection for SqliteConnection {}
-
 impl SqliteConnection {
     /// Run a transaction with `BEGIN IMMEDIATE`
     ///

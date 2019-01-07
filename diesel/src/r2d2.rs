@@ -75,6 +75,30 @@ impl ::std::error::Error for Error {
     }
 }
 
+#[cfg(feature = "unstable")]
+impl<T> ManageConnection for ConnectionManager<T>
+where
+    T: Connection + Send + 'static,
+{
+    type Connection = T;
+    type Error = Error;
+
+    fn connect(&self) -> Result<T, Error> {
+        T::establish(&self.database_url).map_err(Error::ConnectionError)
+    }
+
+    default fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
+        conn.execute("SELECT 1")
+            .map(|_| ())
+            .map_err(Error::QueryError)
+    }
+
+    fn has_broken(&self, _conn: &mut T) -> bool {
+        false
+    }
+}
+
+#[cfg(not(feature = "unstable"))]
 impl<T> ManageConnection for ConnectionManager<T>
 where
     T: Connection + Send + 'static,
