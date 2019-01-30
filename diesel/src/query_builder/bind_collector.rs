@@ -42,7 +42,7 @@ pub struct RawBytesBindCollector<DB: Backend + TypeMetadata> {
     pub binds: Vec<Option<Vec<u8>>>,
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(new_without_default_derive))]
+#[allow(clippy::new_without_default_derive)]
 impl<DB: Backend + TypeMetadata> RawBytesBindCollector<DB> {
     /// Construct an empty `RawBytesBindCollector`
     pub fn new() -> Self {
@@ -64,7 +64,9 @@ impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB>
         U: ToSql<T, DB>,
     {
         let mut to_sql_output = Output::new(Vec::new(), metadata_lookup);
-        let is_null = bind.to_sql(&mut to_sql_output).map_err(SerializationError)?;
+        let is_null = bind
+            .to_sql(&mut to_sql_output)
+            .map_err(SerializationError)?;
         let bytes = to_sql_output.into_inner();
         let metadata = <DB as HasSqlType<T>>::metadata(metadata_lookup);
         match is_null {

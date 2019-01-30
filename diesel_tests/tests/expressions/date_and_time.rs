@@ -221,7 +221,8 @@ fn interval_is_deserialized_properly() {
     )>(
         "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
                     '4 years 3 days 2 hours 1 minute'::interval",
-    )).first(&connection);
+    ))
+    .first(&connection);
 
     let one_minute = 1.minute();
     let one_day = 1.day();
@@ -248,7 +249,8 @@ fn adding_interval_to_timestamp() {
 
     let expected_data = select(sql::<sql_types::Timestamp>(
         "'2015-11-16 06:07:41'::timestamp",
-    )).get_result::<PgTimestamp>(&connection);
+    ))
+    .get_result::<PgTimestamp>(&connection);
     let actual_data = has_timestamps
         .select(created_at + 1.day())
         .first::<PgTimestamp>(&connection);
@@ -272,7 +274,8 @@ fn adding_interval_to_timestamptz() {
 
     let expected_data = select(sql::<sql_types::Timestamptz>(
         "'2015-11-16 06:07:41+0100'::timestamptz",
-    )).get_result::<PgTimestamp>(&connection);
+    ))
+    .get_result::<PgTimestamp>(&connection);
     let actual_data = has_timestamptzs
         .select(created_at + 1.day())
         .first::<PgTimestamp>(&connection);
@@ -296,7 +299,8 @@ fn adding_interval_to_nullable_things() {
 
     let expected_data = select(sql::<Nullable<sql_types::Timestamp>>(
         "'2017-08-21 18:13:37'::timestamp",
-    )).get_result::<Option<PgTimestamp>>(&connection);
+    ))
+    .get_result::<Option<PgTimestamp>>(&connection);
     let actual_data = nullable_date_and_time
         .select(timestamp + 1.day())
         .first::<Option<PgTimestamp>>(&connection);
@@ -304,7 +308,8 @@ fn adding_interval_to_nullable_things() {
 
     let expected_data = select(sql::<Nullable<sql_types::Timestamptz>>(
         "'2017-08-21 18:13:37+0100'::timestamptz",
-    )).get_result::<Option<PgTimestamp>>(&connection);
+    ))
+    .get_result::<Option<PgTimestamp>>(&connection);
     let actual_data = nullable_date_and_time
         .select(timestamptz + 1.day())
         .first::<Option<PgTimestamp>>(&connection);
@@ -312,7 +317,8 @@ fn adding_interval_to_nullable_things() {
 
     let expected_data = select(sql::<Nullable<sql_types::Timestamp>>(
         "'2017-08-21'::timestamp",
-    )).get_result::<Option<PgTimestamp>>(&connection);
+    ))
+    .get_result::<Option<PgTimestamp>>(&connection);
     let actual_data = nullable_date_and_time
         .select(date + 1.day())
         .first::<Option<PgTimestamp>>(&connection);
@@ -339,8 +345,9 @@ fn setup_test_table(conn: &TestConnection) {
                 .not_null()
                 .default("CURRENT_TIMESTAMP"),
         ),
-    ).execute(conn)
-        .unwrap();
+    )
+    .execute(conn)
+    .unwrap();
 
     #[cfg(feature = "postgres")]
     create_table(
@@ -352,8 +359,9 @@ fn setup_test_table(conn: &TestConnection) {
                 .not_null()
                 .default("CURRENT_TIMESTAMP"),
         ),
-    ).execute(conn)
-        .unwrap();
+    )
+    .execute(conn)
+    .unwrap();
 
     create_table(
         "has_time",
@@ -361,8 +369,9 @@ fn setup_test_table(conn: &TestConnection) {
             integer("id").primary_key().auto_increment(),
             time("time").not_null(),
         ),
-    ).execute(conn)
-        .unwrap();
+    )
+    .execute(conn)
+    .unwrap();
 
     create_table(
         "nullable_date_and_time",
@@ -374,6 +383,7 @@ fn setup_test_table(conn: &TestConnection) {
             time("time"),
             date("date"),
         ),
-    ).execute(conn)
-        .unwrap();
+    )
+    .execute(conn)
+    .unwrap();
 }
