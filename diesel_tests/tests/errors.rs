@@ -130,8 +130,9 @@ fn isolation_errors_are_detected() {
             class INTEGER NOT NULL
         )
     "#,
-    ).execute(&conn)
-        .unwrap();
+    )
+    .execute(&conn)
+    .unwrap();
 
     insert_into(isolation_example::table)
         .values(&vec![

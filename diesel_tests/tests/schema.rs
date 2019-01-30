@@ -16,8 +16,9 @@ mod test_infer_schema_works_on_empty_database {
     infer_schema!(":memory:");
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
-         QueryableByName)]
+#[derive(
+    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
+)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -76,6 +77,7 @@ pub struct Following {
     pub email_notifications: bool,
 }
 
+#[rustfmt::skip]
 #[cfg_attr(feature = "postgres", path = "postgres_specific_schema.rs")]
 #[cfg_attr(not(feature = "postgres"), path = "backend_specifics.rs")]
 mod backend_specifics;
@@ -119,8 +121,8 @@ impl NewPost {
 #[derive(Debug, Clone, Copy, Insertable)]
 #[table_name = "comments"]
 pub struct NewComment<'a>(
-    #[column_name(post_id)] pub i32,
-    #[column_name(text)] pub &'a str,
+    #[column_name = "post_id"] pub i32,
+    #[column_name = "text"] pub &'a str,
 );
 
 #[derive(PartialEq, Eq, Debug, Clone, Insertable)]

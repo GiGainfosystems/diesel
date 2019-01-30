@@ -38,7 +38,8 @@ fn migration_list_lists_pending_applied_migrations() {
 }
 
 fn assert_tags_in_order(output: &str, tags: &[&str]) {
-    let matches: Vec<_> = tags.iter()
+    let matches: Vec<_> = tags
+        .iter()
         .map(|s| {
             let index = output
                 .find(s)

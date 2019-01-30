@@ -32,8 +32,9 @@ impl Database {
                  WHERE table_name = '{}'
                  AND table_schema = DATABASE())",
             table
-        ))).get_result(&self.conn())
-            .unwrap()
+        )))
+        .get_result(&self.conn())
+        .unwrap()
     }
 
     pub fn conn(&self) -> MysqlConnection {

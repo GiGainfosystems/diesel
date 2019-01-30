@@ -442,14 +442,14 @@ fn filter_subselect_with_boxed_query() {
 #[test]
 fn filter_subselect_with_nullable_column() {
     use schema_dsl::*;
-    table!{
+    table! {
         heros {
             id -> Integer,
             name -> Text,
             home_world -> Nullable<Integer>,
         }
     }
-    table!{
+    table! {
         home_worlds {
             id -> Integer,
             name -> Text,
@@ -470,8 +470,9 @@ fn filter_subselect_with_nullable_column() {
             integer("id").primary_key().auto_increment(),
             string("name").not_null(),
         ),
-    ).execute(&connection)
-        .unwrap();
+    )
+    .execute(&connection)
+    .unwrap();
 
     create_table(
         "heros",
@@ -480,8 +481,9 @@ fn filter_subselect_with_nullable_column() {
             string("name").not_null(),
             integer("home_world"),
         ),
-    ).execute(&connection)
-        .unwrap();
+    )
+    .execute(&connection)
+    .unwrap();
 
     ::diesel::insert_into(home_worlds::table)
         .values(home_worlds::name.eq("Tatooine"))

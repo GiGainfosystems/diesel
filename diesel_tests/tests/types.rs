@@ -1219,11 +1219,9 @@ fn test_range_from_sql() {
     );
 
     let query = "SELECT '(1,1]'::int4range";
-    assert!(
-        sql::<Range<Int4>>(query)
-            .load::<(Bound<i32>, Bound<i32>)>(&connection)
-            .is_err()
-    );
+    assert!(sql::<Range<Int4>>(query)
+        .load::<(Bound<i32>, Bound<i32>)>(&connection)
+        .is_err());
 }
 
 #[cfg(feature = "postgres")]

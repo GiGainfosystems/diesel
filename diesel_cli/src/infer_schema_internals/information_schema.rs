@@ -17,8 +17,7 @@ pub trait UsesInformationSchema: Backend {
     type TypeColumn: SelectableExpression<
             self::information_schema::columns::table,
             SqlType = sql_types::Text,
-        >
-        + NonAggregate
+        > + NonAggregate
         + QueryId
         + QueryFragment<Self>;
 
@@ -60,7 +59,7 @@ impl UsesInformationSchema for Mysql {
     }
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(module_inception))]
+#[allow(clippy::module_inception)]
 mod information_schema {
     table! {
         information_schema.tables (table_schema, table_name) {
@@ -195,7 +194,7 @@ where
     Ok(table_names)
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(similar_names))]
+#[allow(clippy::similar_names)]
 #[cfg(feature = "postgres")]
 pub fn load_foreign_key_constraints<Conn>(
     connection: &Conn,
@@ -234,28 +233,30 @@ where
 
     constraint_names
         .into_iter()
-        .map(|(fk_schema, fk_name, pk_schema, pk_name)| {
-            let (mut fk_table, fk_column) = kcu::table
-                .filter(kcu::constraint_schema.eq(&fk_schema))
-                .filter(kcu::constraint_name.eq(&fk_name))
-                .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                .first::<(TableName, _)>(connection)?;
-            let (mut pk_table, pk_column) = kcu::table
-                .filter(kcu::constraint_schema.eq(pk_schema))
-                .filter(kcu::constraint_name.eq(pk_name))
-                .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                .first::<(TableName, _)>(connection)?;
+        .map(
+            |(foreign_key_schema, foreign_key_name, primary_key_schema, primary_key_name)| {
+                let (mut foreign_key_table, foreign_key_column) = kcu::table
+                    .filter(kcu::constraint_schema.eq(&foreign_key_schema))
+                    .filter(kcu::constraint_name.eq(&foreign_key_name))
+                    .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
+                    .first::<(TableName, _)>(connection)?;
+                let (mut primary_key_table, primary_key_column) = kcu::table
+                    .filter(kcu::constraint_schema.eq(primary_key_schema))
+                    .filter(kcu::constraint_name.eq(primary_key_name))
+                    .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
+                    .first::<(TableName, _)>(connection)?;
 
-            fk_table.strip_schema_if_matches(&default_schema);
-            pk_table.strip_schema_if_matches(&default_schema);
+                foreign_key_table.strip_schema_if_matches(&default_schema);
+                primary_key_table.strip_schema_if_matches(&default_schema);
 
-            Ok(ForeignKeyConstraint {
-                child_table: fk_table,
-                parent_table: pk_table,
-                foreign_key: fk_column,
-                primary_key: pk_column,
-            })
-        })
+                Ok(ForeignKeyConstraint {
+                    child_table: foreign_key_table,
+                    parent_table: primary_key_table,
+                    foreign_key: foreign_key_column,
+                    primary_key: primary_key_column,
+                })
+            },
+        )
         .collect()
 }
 
