@@ -2,8 +2,8 @@ use super::backend::Mysql;
 use query_builder::QueryBuilder;
 use result::QueryResult;
 
-mod query_fragment_impls;
 mod limit_offset;
+mod query_fragment_impls;
 
 /// The MySQL query builder
 #[allow(missing_debug_implementations)]

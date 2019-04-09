@@ -1,4 +1,4 @@
-use super::{QueryFragment};
+use super::QueryFragment;
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
