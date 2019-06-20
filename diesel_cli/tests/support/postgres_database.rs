@@ -31,8 +31,9 @@ impl Database {
              FROM information_schema.tables \
              WHERE table_name = '{}')",
             table
-        ))).get_result(&self.conn())
-            .unwrap()
+        )))
+        .get_result(&self.conn())
+        .unwrap()
     }
 
     pub fn conn(&self) -> PgConnection {

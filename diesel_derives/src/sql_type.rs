@@ -92,7 +92,8 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
             } else if let Some(x) = get_oids(&attr)? {
                 Ok(x)
             } else {
-                Err(attr.span()
+                Err(attr
+                    .span()
                     .error("Missing required options")
                     .help("Valid options are `type_name` or `oid` and `array_oid`"))
             }

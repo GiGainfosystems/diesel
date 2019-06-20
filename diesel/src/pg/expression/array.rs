@@ -1,5 +1,7 @@
 use backend::Backend;
-use expression::{AppearsOnTable, AsExpressionList, Expression, NonAggregate, SelectableExpression};
+use expression::{
+    AppearsOnTable, AsExpressionList, Expression, NonAggregate, SelectableExpression,
+};
 use query_builder::{AstPass, QueryFragment};
 use sql_types;
 use std::marker::PhantomData;

@@ -11,8 +11,9 @@ extern crate test;
 
 mod schema;
 
-use self::schema::{comments, posts, users, Comment, NewComment, NewPost, NewUser, Post,
-                   TestConnection, User};
+use self::schema::{
+    comments, posts, users, Comment, NewComment, NewPost, NewUser, Post, TestConnection, User,
+};
 use self::test::Bencher;
 use diesel::*;
 
@@ -215,7 +216,8 @@ fn loading_associations_sequentially(b: &mut Bencher) {
             })
         })
         .collect();
-    let comment_data: Vec<_> = data.iter()
+    let comment_data: Vec<_> = data
+        .iter()
         .map(|&(ref title, post_id)| NewComment(post_id, &title))
         .collect();
     insert_into(comments::table)

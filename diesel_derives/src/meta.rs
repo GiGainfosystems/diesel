@@ -119,7 +119,8 @@ impl MetaItem {
 
         match self.meta {
             List(ref list) => Ok(Nested(list.nested.iter())),
-            _ => Err(self.span()
+            _ => Err(self
+                .span()
                 .error(format!("`{0}` must be in the form `{0}(...)`", self.name()))),
         }
     }

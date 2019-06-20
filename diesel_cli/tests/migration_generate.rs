@@ -15,7 +15,8 @@ fn migration_generate_creates_a_migration_with_the_proper_name() {
 Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.up.sql
 Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
         ",
-    ).unwrap();
+    )
+    .unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -71,7 +72,8 @@ fn migration_generate_creates_a_migration_with_initial_contents() {
 #[test]
 fn migration_generate_doesnt_require_database_url_to_be_set() {
     let p = project("migration_name").folder("migrations").build();
-    let result = p.command_without_database_url("migration")
+    let result = p
+        .command_without_database_url("migration")
         .arg("generate")
         .arg("hello")
         .run();
@@ -82,7 +84,8 @@ fn migration_generate_doesnt_require_database_url_to_be_set() {
 #[test]
 fn migration_version_can_be_specified_on_creation() {
     let p = project("migration_name").folder("migrations").build();
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("generate")
         .arg("hello")
         .arg("--version=1234")
@@ -93,7 +96,8 @@ fn migration_version_can_be_specified_on_creation() {
 Creating migrations.1234_hello.up.sql
 Creating migrations.1234_hello.down.sql
 ",
-    ).unwrap();
+    )
+    .unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -104,7 +108,8 @@ Creating migrations.1234_hello.down.sql
 #[test]
 fn migration_directory_can_be_specified_for_generate_by_command_line_arg() {
     let p = project("migration_name").folder("foo").build();
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("generate")
         .arg("stuff")
         .arg("--version=12345")
@@ -116,7 +121,8 @@ fn migration_directory_can_be_specified_for_generate_by_command_line_arg() {
 Creating foo.12345_stuff.up.sql
 Creating foo.12345_stuff.down.sql
 ",
-    ).unwrap();
+    )
+    .unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -127,7 +133,8 @@ Creating foo.12345_stuff.down.sql
 #[test]
 fn migration_directory_can_be_specified_for_generate_by_env_var() {
     let p = project("migration_name").folder("bar").build();
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("generate")
         .arg("stuff")
         .arg("--version=12345")
@@ -139,7 +146,8 @@ fn migration_directory_can_be_specified_for_generate_by_env_var() {
 Creating bar.12345_stuff.up.sql
 Creating bar.12345_stuff.down.sql
 ",
-    ).unwrap();
+    )
+    .unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 

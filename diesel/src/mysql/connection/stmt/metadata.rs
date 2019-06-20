@@ -33,7 +33,8 @@ impl StatementMetadata {
     }
 
     fn populate_column_indices(&mut self) {
-        self.column_indices = self.fields()
+        self.column_indices = self
+            .fields()
             .iter()
             .enumerate()
             .map(|(i, field)| {

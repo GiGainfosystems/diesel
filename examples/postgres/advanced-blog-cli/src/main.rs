@@ -64,7 +64,8 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
                 query = query.per_page(min(per_page, 25));
             }
 
-            let (posts_with_user, total_pages) = query.load_and_count_pages::<(Post, User)>(&conn)?;
+            let (posts_with_user, total_pages) =
+                query.load_and_count_pages::<(Post, User)>(&conn)?;
             let (posts, post_users): (Vec<_>, Vec<_>) = posts_with_user.into_iter().unzip();
 
             let comments = Comment::belonging_to(&posts)
