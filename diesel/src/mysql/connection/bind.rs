@@ -89,6 +89,10 @@ impl Binds {
     pub fn field_data(&self, idx: usize) -> Option<MysqlValue<'_>> {
         self.data[idx].bytes().map(MysqlValue::new)
     }
+
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
 }
 
 struct BindData {
