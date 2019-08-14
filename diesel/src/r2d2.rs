@@ -75,33 +75,31 @@ impl ::std::error::Error for Error {
     }
 }
 
-#[cfg(feature = "unstable")]
-impl<T> ManageConnection for ConnectionManager<T>
-where
-    T: Connection + Send + 'static,
-{
-    type Connection = T;
-    type Error = Error;
-
-    fn connect(&self) -> Result<T, Error> {
-        T::establish(&self.database_url).map_err(Error::ConnectionError)
-    }
-
-    default fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
-        conn.execute("SELECT 1")
-            .map(|_| ())
-            .map_err(Error::QueryError)
-    }
-
-    fn has_broken(&self, _conn: &mut T) -> bool {
-        false
-    }
+/// A trait indicating a connection could be used inside a r2d2 pool
+pub trait R2D2Connection: Connection {
+    /// Query used to check if a connection is still alive
+    ///
+    /// Should result in a database error if that's not the case
+    const CHECK_QUERY_STRING: &'static str;
 }
 
-#[cfg(not(feature = "unstable"))]
+#[cfg(feature = "postgres")]
+impl R2D2Connection for ::pg::PgConnection {
+    const CHECK_QUERY_STRING: &'static str = "SELECT 1";
+}
+
+#[cfg(feature = "mysql")]
+impl R2D2Connection for ::mysql::MysqlConnection {
+    const CHECK_QUERY_STRING: &'static str = "SELECT 1";
+}
+#[cfg(feature = "sqlite")]
+impl R2D2Connection for ::sqlite::SqliteConnection {
+    const CHECK_QUERY_STRING: &'static str = "SELECT 1";
+}
+
 impl<T> ManageConnection for ConnectionManager<T>
 where
-    T: Connection + Send + 'static,
+    T: R2D2Connection + Send + 'static,
 {
     type Connection = T;
     type Error = Error;
@@ -111,7 +109,7 @@ where
     }
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
-        conn.execute("SELECT 1")
+        conn.execute(T::CHECK_QUERY_STRING)
             .map(|_| ())
             .map_err(Error::QueryError)
     }
@@ -123,7 +121,7 @@ where
 
 impl<T> SimpleConnection for PooledConnection<ConnectionManager<T>>
 where
-    T: Connection + Send + 'static,
+    T: R2D2Connection + Send + 'static,
 {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         (&**self).batch_execute(query)
@@ -132,7 +130,7 @@ where
 
 impl<C> Connection for PooledConnection<ConnectionManager<C>>
 where
-    C: Connection<TransactionManager = AnsiTransactionManager> + Send + 'static,
+    C: Connection<TransactionManager = AnsiTransactionManager> + R2D2Connection + Send + 'static,
     C::Backend: UsesAnsiSavepointSyntax,
 {
     type Backend = C::Backend;
