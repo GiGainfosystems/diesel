@@ -3,6 +3,7 @@ use query_builder::QueryBuilder;
 use result::QueryResult;
 
 mod distinct_on;
+mod limit_offset;
 mod query_fragment_impls;
 pub use self::distinct_on::DistinctOnClause;
 
