@@ -42,7 +42,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
         where_clause: BoxedWhereClause<'a, DB>,
         order: Option<Box<dyn QueryFragment<DB> + 'a>>,
         limit_offset: BoxedLimitOffsetClause<'a, DB>,
-        group_by: Box<QueryFragment<DB> + 'a>,
+        group_by: Box<dyn QueryFragment<DB> + 'a>,
     ) -> Self {
         BoxedSelectStatement {
             select,
