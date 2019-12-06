@@ -75,7 +75,7 @@ impl<'a> Row<Sqlite> for FunctionRow<'a> {
         self.args.len()
     }
 
-    fn column_name(&self) -> &str {
-        unimplemented!()
+    fn column_name(&self) -> Option<&str> {
+        None
     }
 }
