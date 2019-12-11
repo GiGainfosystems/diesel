@@ -1,6 +1,6 @@
 [package]
 name = "migrations_macros"
-version = "1.4.0"
+version = "1.4.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
@@ -14,7 +14,7 @@ quote = "1"
 proc-macro2 = "1"
 
 [dev-dependencies]
-tempdir = "0.3.4"
+tempfile = "3.0.0"
 
 [lib]
 proc-macro = true

@@ -27,6 +27,15 @@ pub trait Row<DB: Backend> {
             self.take();
         }
     }
+
+    /// Number of columns in the current result set
+    fn column_count(&self) -> usize;
+
+    /// Name of the current column
+    ///
+    /// May return `None` in cases where the field is not
+    /// named on sql side
+    fn column_name(&self) -> Option<&str>;
 }
 
 /// Represents a row of a SQL query, where the values are accessed by name
