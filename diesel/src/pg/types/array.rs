@@ -2,10 +2,10 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::fmt;
 use std::io::Write;
 
-use deserialize::{self, FromSql};
-use pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::{Array, HasSqlType, Nullable};
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::{Array, HasSqlType, Nullable};
 
 impl<T> HasSqlType<Array<T>> for Pg
 where
@@ -49,19 +49,15 @@ where
                 } else {
                     let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                     bytes = new_bytes;
-                    T::from_sql(Some(PgValue::new(
-                        elem_bytes,
-                        value.get_oid(),
-                        value.get_metadata_lookup(),
-                    )))
+                    T::from_sql(Some(PgValue::new(elem_bytes, value.get_oid())))
                 }
             })
             .collect()
     }
 }
 
-use expression::bound::Bound;
-use expression::AsExpression;
+use crate::expression::bound::Bound;
+use crate::expression::AsExpression;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {

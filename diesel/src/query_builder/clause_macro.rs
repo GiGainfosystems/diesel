@@ -24,8 +24,8 @@ macro_rules! simple_clause {
         $sql:expr,
         backend_bounds = $($backend_bounds:ident),*
     ) => {
-        use backend::Backend;
-        use result::QueryResult;
+        use crate::backend::Backend;
+        use crate::result::QueryResult;
         use super::{QueryFragment, AstPass};
 
         $(#[doc = $($no_clause_doc)*])*

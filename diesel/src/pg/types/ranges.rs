@@ -2,12 +2,12 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
 
-use deserialize::{self, FromSql, FromSqlRow, Queryable};
-use expression::bound::Bound as SqlBound;
-use expression::AsExpression;
-use pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::*;
+use crate::deserialize::{self, FromSql, FromSqlRow, Queryable};
+use crate::expression::bound::Bound as SqlBound;
+use crate::expression::AsExpression;
+use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::*;
 
 // https://github.com/postgres/postgres/blob/113b0045e20d40f726a0a30e33214455e4f1385e/src/include/utils/rangetypes.h#L35-L43
 bitflags! {
@@ -69,7 +69,7 @@ impl<T, ST> FromSqlRow<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     (Bound<T>, Bound<T>): FromSql<Range<ST>, Pg>,
 {
-    fn build_from_row<R: ::row::Row<Pg>>(row: &mut R) -> deserialize::Result<Self> {
+    fn build_from_row<R: crate::row::Row<Pg>>(row: &mut R) -> deserialize::Result<Self> {
         FromSql::<Range<ST>, Pg>::from_sql(row.take())
     }
 }
@@ -89,11 +89,7 @@ where
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
-            let value = T::from_sql(Some(PgValue::new(
-                elem_bytes,
-                value.get_oid(),
-                value.get_metadata_lookup(),
-            )))?;
+            let value = T::from_sql(Some(PgValue::new(elem_bytes, value.get_oid())))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
                 Bound::Included(value)
@@ -104,11 +100,7 @@ where
 
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
-            let value = T::from_sql(Some(PgValue::new(
-                bytes,
-                value.get_oid(),
-                value.get_metadata_lookup(),
-            )))?;
+            let value = T::from_sql(Some(PgValue::new(bytes, value.get_oid())))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {
                 Bound::Included(value)

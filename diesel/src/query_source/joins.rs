@@ -1,13 +1,13 @@
 use super::{AppearsInFromClause, Plus, QuerySource};
-use backend::Backend;
-use expression::grouped::Grouped;
-use expression::nullable::Nullable;
-use expression::SelectableExpression;
-use prelude::*;
-use query_builder::*;
-use result::QueryResult;
-use sql_types::Bool;
-use util::TupleAppend;
+use crate::backend::Backend;
+use crate::expression::grouped::Grouped;
+use crate::expression::nullable::Nullable;
+use crate::expression::SelectableExpression;
+use crate::prelude::*;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::Bool;
+use crate::util::TupleAppend;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 /// A query source representing the join between two tables
@@ -120,35 +120,6 @@ where
         Ok(())
     }
 }
-
-impl<Left, Right, Kind, T> SelectableExpression<Join<Left, Right, Kind>> for Nullable<T>
-where
-    T: SelectableExpression<Join<Left, Right, Inner>>,
-    Nullable<T>: AppearsOnTable<Join<Left, Right, Kind>>,
-{
-}
-
-// FIXME: Remove this when overlapping marker traits are stable
-impl<Join, On, T> SelectableExpression<JoinOn<Join, On>> for Nullable<T>
-where
-    Nullable<T>: SelectableExpression<Join>,
-    Nullable<T>: AppearsOnTable<JoinOn<Join, On>>,
-{
-}
-
-// FIXME: Remove this when overlapping marker traits are stable
-impl<From, T> SelectableExpression<SelectStatement<From>> for Nullable<T>
-where
-    Nullable<T>: SelectableExpression<From>,
-    Nullable<T>: AppearsOnTable<SelectStatement<From>>,
-{
-}
-
-// FIXME: We want these blanket impls when overlapping marker traits are stable
-// impl<T, Join, On> SelectableExpression<JoinOn<Join, On>> for T where
-//     T: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>,
-// {
-// }
 
 /// Indicates that two tables can be joined without an explicit `ON` clause.
 ///
@@ -299,4 +270,42 @@ where
     fn join_target(rhs: OnClauseWrapper<Rhs, On>) -> (Self::FromClause, Self::OnClause) {
         (rhs.source, rhs.on)
     }
+}
+
+#[doc(hidden)]
+/// Convert any joins in a `FROM` clause into an inner join.
+///
+/// This trait is used to determine whether
+/// `Nullable<T>: SelectableExpression<SomeJoin>`. We consider it to be
+/// selectable if `T: SelectableExpression<InnerJoin>`. Since `SomeJoin`
+/// may be deeply nested, we need to recursively change any appearances of
+/// `LeftOuter` to `Inner` in order to perform this check.
+pub trait ToInnerJoin {
+    type InnerJoin;
+}
+
+impl<Left, Right, Kind> ToInnerJoin for Join<Left, Right, Kind>
+where
+    Left: ToInnerJoin,
+    Right: ToInnerJoin,
+{
+    type InnerJoin = Join<Left::InnerJoin, Right::InnerJoin, Inner>;
+}
+
+impl<Join, On> ToInnerJoin for JoinOn<Join, On>
+where
+    Join: ToInnerJoin,
+{
+    type InnerJoin = JoinOn<Join::InnerJoin, On>;
+}
+
+impl<From> ToInnerJoin for SelectStatement<From>
+where
+    From: ToInnerJoin,
+{
+    type InnerJoin = SelectStatement<From::InnerJoin>;
+}
+
+impl<T: Table> ToInnerJoin for T {
+    type InnerJoin = T;
 }

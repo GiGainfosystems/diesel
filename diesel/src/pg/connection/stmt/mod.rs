@@ -5,8 +5,8 @@ use std::os::raw as libc;
 use std::ptr;
 
 use super::result::PgResult;
-use pg::{PgConnection, PgTypeMetadata};
-use result::QueryResult;
+use crate::pg::{PgConnection, PgTypeMetadata};
+use crate::result::QueryResult;
 
 pub use super::raw::RawConnection;
 
@@ -17,11 +17,11 @@ pub struct Statement {
 
 impl Statement {
     #[allow(clippy::ptr_arg)]
-    pub fn execute<'a>(
+    pub fn execute(
         &self,
-        conn: &'a PgConnection,
+        conn: &PgConnection,
         param_data: &Vec<Option<Vec<u8>>>,
-    ) -> QueryResult<PgResult<'a>> {
+    ) -> QueryResult<PgResult> {
         let params_pointer = param_data
             .iter()
             .map(|data| {
@@ -45,7 +45,7 @@ impl Statement {
             )
         };
 
-        PgResult::new(internal_res?, conn)
+        PgResult::new(internal_res?)
     }
 
     #[allow(clippy::ptr_arg)]
@@ -67,7 +67,7 @@ impl Statement {
                 param_types_to_ptr(Some(&param_types_vec)),
             )
         };
-        PgResult::new(internal_result?, conn)?;
+        PgResult::new(internal_result?)?;
 
         Ok(Statement {
             name,

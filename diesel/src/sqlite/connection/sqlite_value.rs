@@ -5,8 +5,8 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{slice, str};
 
-use row::*;
-use sqlite::Sqlite;
+use crate::row::*;
+use crate::sqlite::Sqlite;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue {
@@ -35,6 +35,8 @@ impl SqliteValue {
             let ptr = ffi::sqlite3_value_text(self.value());
             let len = ffi::sqlite3_value_bytes(self.value());
             let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
+            // The string is guaranteed to be utf8 according to
+            // https://www.sqlite.org/c3ref/value_blob.html
             str::from_utf8_unchecked(bytes)
         }
     }

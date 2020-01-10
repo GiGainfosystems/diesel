@@ -1,9 +1,9 @@
-use backend::Backend;
-use expression::*;
-use query_builder::*;
-use query_source::Table;
-use result::QueryResult;
-use sql_types::IntoNullable;
+use crate::backend::Backend;
+use crate::expression::*;
+use crate::query_builder::*;
+use crate::query_source::joins::ToInnerJoin;
+use crate::result::QueryResult;
+use crate::sql_types::IntoNullable;
 
 #[derive(Debug, Copy, Clone, DieselNumericOps, NonAggregate)]
 pub struct Nullable<T>(T);
@@ -50,7 +50,7 @@ impl<T: QueryId> QueryId for Nullable<T> {
 impl<T, QS> SelectableExpression<QS> for Nullable<T>
 where
     Self: AppearsOnTable<QS>,
-    T: SelectableExpression<QS>,
-    QS: Table,
+    QS: ToInnerJoin,
+    T: SelectableExpression<QS::InnerJoin>,
 {
 }

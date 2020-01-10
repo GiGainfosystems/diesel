@@ -8,7 +8,7 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{ptr, str};
 
-use result::*;
+use crate::result::*;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
@@ -106,7 +106,7 @@ fn last_error_message(conn: *const PGconn) -> String {
     unsafe {
         let error_ptr = PQerrorMessage(conn);
         let bytes = CStr::from_ptr(error_ptr).to_bytes();
-        str::from_utf8_unchecked(bytes).to_string()
+        String::from_utf8_lossy(bytes).to_string()
     }
 }
 

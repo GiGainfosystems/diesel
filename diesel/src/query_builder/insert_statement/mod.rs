@@ -5,23 +5,25 @@ pub(crate) use self::column_list::ColumnList;
 pub(crate) use self::insert_from_select::InsertFromSelect;
 
 use std::any::*;
+#[cfg(feature = "sqlite")]
+use std::fmt::{self, Debug, Display};
 use std::marker::PhantomData;
 
 use super::returning_clause::*;
-use backend::Backend;
-use expression::operators::Eq;
-use expression::{Expression, NonAggregate, SelectableExpression};
-use insertable::*;
+use crate::backend::Backend;
+use crate::expression::operators::Eq;
+use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::insertable::*;
 #[cfg(feature = "mysql")]
-use mysql::Mysql;
-use query_builder::*;
+use crate::mysql::Mysql;
+use crate::query_builder::*;
 #[cfg(feature = "sqlite")]
-use query_dsl::methods::ExecuteDsl;
-use query_dsl::RunQueryDsl;
-use query_source::{Column, Table};
-use result::QueryResult;
+use crate::query_dsl::methods::ExecuteDsl;
+use crate::query_dsl::RunQueryDsl;
+use crate::query_source::{Column, Table};
+use crate::result::QueryResult;
 #[cfg(feature = "sqlite")]
-use sqlite::{Sqlite, SqliteConnection};
+use crate::sqlite::{Sqlite, SqliteConnection};
 
 /// The structure returned by [`insert_into`].
 ///
@@ -62,7 +64,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// #     let connection = connection_no_data();
     /// connection.execute("CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
@@ -210,7 +212,7 @@ where
     Op: Copy,
 {
     fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
-        use connection::Connection;
+        use crate::connection::Connection;
         conn.transaction(|| {
             let mut result = 0;
             for record in query.records.records {
@@ -228,6 +230,62 @@ where
 }
 
 #[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> Display for DebugQuery<'a, InsertStatement<T, BatchInsert<'a, U, T>, Op>, Sqlite>
+where
+    &'a U: Insertable<T>,
+    for<'b> DebugQuery<'b, InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>, Sqlite>:
+        Display,
+    T: Copy,
+    Op: Copy,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "BEGIN;")?;
+        for record in self.query.records.records {
+            let stmt = InsertStatement::new(
+                self.query.target,
+                record.values(),
+                self.query.operator,
+                self.query.returning,
+            );
+
+            writeln!(f, "{}", crate::debug_query::<Sqlite, _>(&stmt))?;
+        }
+        writeln!(f, "COMMIT;")?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> Debug for DebugQuery<'a, InsertStatement<T, BatchInsert<'a, U, T>, Op>, Sqlite>
+where
+    &'a U: Insertable<T>,
+    for<'b> DebugQuery<'b, InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>, Sqlite>:
+        Display,
+    T: Copy,
+    Op: Copy,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut statements = Vec::with_capacity(self.query.records.records.len() + 2);
+        statements.push("BEGIN".into());
+        for record in self.query.records.records {
+            let stmt = InsertStatement::new(
+                self.query.target,
+                record.values(),
+                self.query.operator,
+                self.query.returning,
+            );
+            statements.push(format!("{}", crate::debug_query::<Sqlite, _>(&stmt)));
+        }
+        statements.push("COMMIT".into());
+
+        f.debug_struct("Query")
+            .field("sql", &statements)
+            .field("binds", &[] as &[i32; 0])
+            .finish()
+    }
+}
+
+#[cfg(feature = "sqlite")]
 impl<T, U, Op> ExecuteDsl<SqliteConnection>
     for InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>
 where
@@ -236,7 +294,7 @@ where
     Op: Copy,
 {
     fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
-        use connection::Connection;
+        use crate::connection::Connection;
         conn.transaction(|| {
             let mut result = 0;
             for value in query.records.values {
@@ -246,6 +304,61 @@ where
             }
             Ok(result)
         })
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> Display
+    for DebugQuery<'a, InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>, Sqlite>
+where
+    for<'b> DebugQuery<'b, InsertStatement<T, &'b ValuesClause<U, T>, Op>, Sqlite>: Display,
+    T: Copy,
+    Op: Copy,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "BEGIN;")?;
+        for value in &self.query.records.values {
+            let stmt = InsertStatement::new(
+                self.query.target,
+                value,
+                self.query.operator,
+                self.query.returning,
+            );
+
+            writeln!(f, "{}", crate::debug_query::<Sqlite, _>(&stmt))?;
+        }
+        writeln!(f, "COMMIT;")?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> Debug
+    for DebugQuery<'a, InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>, Sqlite>
+where
+    for<'b> DebugQuery<'b, InsertStatement<T, &'b ValuesClause<U, T>, Op>, Sqlite>: Display,
+    T: Copy,
+    Op: Copy,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut statements = Vec::with_capacity(self.query.records.values.len() + 2);
+        statements.push("BEGIN".into());
+
+        for value in &self.query.records.values {
+            let stmt = InsertStatement::new(
+                self.query.target,
+                value,
+                self.query.operator,
+                self.query.returning,
+            );
+            statements.push(format!("{}", crate::debug_query::<Sqlite, _>(&stmt)));
+        }
+        statements.push("COMMIT".into());
+
+        f.debug_struct("Query")
+            .field("sql", &statements)
+            .field("binds", &[] as &[i32; 0])
+            .finish()
     }
 }
 
@@ -430,7 +543,7 @@ where
     #[cfg(feature = "mysql")]
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         // This can be less hacky once stabilization lands
-        if TypeId::of::<DB>() == TypeId::of::<::mysql::Mysql>() {
+        if TypeId::of::<DB>() == TypeId::of::<crate::mysql::Mysql>() {
             out.push_sql("() VALUES ()");
         } else {
             out.push_sql("DEFAULT VALUES");

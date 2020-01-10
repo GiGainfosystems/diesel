@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use std::mem;
 
 use super::{AstPass, QueryBuilder, QueryFragment};
-use backend::Backend;
+use crate::backend::Backend;
 
 /// A struct that implements `fmt::Display` and `fmt::Debug` to show the SQL
 /// representation of a query.
@@ -16,7 +16,7 @@ use backend::Backend;
 ///
 /// [`debug_query`]: ../fn.debug_query.html
 pub struct DebugQuery<'a, T: 'a, DB> {
-    query: &'a T,
+    pub(crate) query: &'a T,
     _marker: PhantomData<DB>,
 }
 

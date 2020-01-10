@@ -7,8 +7,8 @@ use std::ptr::NonNull;
 use std::{mem, ptr, slice, str};
 
 use super::serialized_value::SerializedValue;
-use result::Error::DatabaseError;
-use result::*;
+use crate::result::Error::DatabaseError;
+use crate::result::*;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
@@ -133,6 +133,7 @@ impl Drop for RawConnection {
 fn convert_to_string_and_free(err_msg: *const libc::c_char) -> String {
     let msg = unsafe {
         let bytes = CStr::from_ptr(err_msg).to_bytes();
+        // sqlite is documented to return utf8 strings here
         str::from_utf8_unchecked(bytes).into()
     };
     unsafe { ffi::sqlite3_free(err_msg as *mut libc::c_void) };

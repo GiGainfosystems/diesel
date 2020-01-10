@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::ffi::CStr;
 
 use super::{ffi, libc, Binds, Statement, StatementMetadata};
-use mysql::{Mysql, MysqlTypeMetadata, MysqlValue};
-use result::QueryResult;
-use row::*;
+use crate::mysql::{Mysql, MysqlTypeMetadata, MysqlValue};
+use crate::result::QueryResult;
+use crate::row::*;
 
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,

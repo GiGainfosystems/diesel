@@ -18,21 +18,21 @@ pub use self::boxed::BoxedSelectStatement;
 
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::NoGroupByClause;
-use super::limit_clause::*;
+use super::limit_clause::NoLimitClause;
 use super::locking_clause::NoLockingClause;
-use super::offset_clause::*;
+use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::select_clause::*;
 use super::where_clause::*;
 use super::{AstPass, Query, QueryFragment};
-use backend::Backend;
-use expression::subselect::ValidSubselect;
-use expression::*;
-use query_builder::limit_offset_clause::LimitOffsetClause;
-use query_builder::SelectQuery;
-use query_source::joins::{AppendSelection, Inner, Join};
-use query_source::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::expression::subselect::ValidSubselect;
+use crate::expression::*;
+use crate::query_builder::limit_offset_clause::LimitOffsetClause;
+use crate::query_builder::SelectQuery;
+use crate::query_source::joins::{AppendSelection, Inner, Join};
+use crate::query_source::*;
+use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]
