@@ -1,5 +1,7 @@
 //! The PostgreSQL backend
 
+use byteorder::NetworkEndian;
+
 use super::query_builder::PgQueryBuilder;
 use super::{PgMetadataLookup, PgValue};
 use backend::*;
@@ -37,6 +39,7 @@ impl Queryable<(Oid, Oid), Pg> for PgTypeMetadata {
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type BindCollector = RawBytesBindCollector<Pg>;
+    type ByteOrder = NetworkEndian;
 }
 
 impl<'a> HasRawValue<'a> for Pg {

@@ -1,6 +1,5 @@
 use super::Mysql;
 use backend::BinaryRawValue;
-use byteorder::NativeEndian;
 
 /// Raw mysql value as received from the database
 #[derive(Copy, Clone, Debug)]
@@ -20,8 +19,6 @@ impl<'a> MysqlValue<'a> {
 }
 
 impl<'a> BinaryRawValue<'a> for Mysql {
-    type ByteOrder = NativeEndian;
-
     fn as_bytes(value: Self::RawValue) -> &'a [u8] {
         value.raw
     }

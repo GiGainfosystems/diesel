@@ -1,6 +1,4 @@
 mod date_and_time;
-mod floats;
-mod integer;
 mod numeric;
 
 use std::io::prelude::*;

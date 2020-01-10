@@ -1,4 +1,6 @@
 //! The SQLite backend
+use byteorder::NativeEndian;
+
 use super::connection::SqliteValue;
 use super::query_builder::SqliteQueryBuilder;
 use backend::*;
@@ -39,6 +41,7 @@ pub enum SqliteType {
 impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
     type BindCollector = RawBytesBindCollector<Sqlite>;
+    type ByteOrder = NativeEndian;
 }
 
 impl<'a> HasRawValue<'a> for Sqlite {

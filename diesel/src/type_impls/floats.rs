@@ -25,10 +25,7 @@ where
     }
 }
 
-impl<DB> ToSql<sql_types::Float, DB> for f32
-where
-    DB: Backend + for<'a> BinaryRawValue<'a>,
-{
+impl<DB: Backend> ToSql<sql_types::Float, DB> for f32 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_f32::<DB::ByteOrder>(*self)
             .map(|_| IsNull::No)
@@ -54,10 +51,7 @@ where
     }
 }
 
-impl<DB> ToSql<sql_types::Double, DB> for f64
-where
-    DB: Backend + for<'a> BinaryRawValue<'a>,
-{
+impl<DB: Backend> ToSql<sql_types::Double, DB> for f64 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_f64::<DB::ByteOrder>(*self)
             .map(|_| IsNull::No)
