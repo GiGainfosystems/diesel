@@ -12,28 +12,61 @@ pub struct Binds {
 }
 
 impl Binds {
-    pub fn from_input_data<Iter>(input: Iter) -> Self
+    pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
     where
-        Iter: IntoIterator<Item = (MysqlTypeMetadata, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (Option<MysqlTypeMetadata>, Option<Vec<u8>>)>,
     {
         let data = input
             .into_iter()
             .map(|(metadata, bytes)| {
-                BindData::for_input(metadata.data_type, metadata.is_unsigned as _, bytes)
+                if let Some(metadata) = metadata {
+                    Ok(BindData::for_input(
+                        metadata.data_type,
+                        metadata.is_unsigned as _,
+                        bytes,
+                    ))
+                } else {
+                    Err("Unknown bind type.")
+                }
             })
-            .collect();
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| crate::result::Error::QueryBuilderError(e.into()))?;
 
-        Binds { data }
+        Ok(Binds { data })
     }
 
-    pub fn from_output_types(types: Vec<MysqlTypeMetadata>) -> Self {
-        let data = types
-            .into_iter()
-            .map(|metadata| {
-                (
-                    mysql_type_to_ffi_type(metadata.data_type),
-                    metadata.is_unsigned as _,
-                )
+    pub fn from_output_types(
+        types: Vec<Option<MysqlTypeMetadata>>,
+        fields: Option<&[ffi::MYSQL_FIELD]>,
+    ) -> Self {
+        let mut field_iter = fields.map(|f| f.iter());
+        let mut types_iter = types.into_iter();
+
+        let data = std::iter::from_fn(||{
+            // Depending on the input data we want different things here
+            // * Case 1: fields is none, then we want to return as many type data as are in types
+            // * Case 2: fields contains a list of binds, then we want to return as many type data
+            // as in fields
+            // For both cases the missing values are set to none
+            let next_type = types_iter.next();
+            if let Some(field_iter) = field_iter.as_mut() {
+                let next_field_type = field_iter.next()?;
+                Some((next_type.and_then(|i| i), Some(next_field_type)))
+            } else {
+                next_type.map(|t| (t, None))
+            }
+        })
+            .map(|(metadata, field)| {
+                if let Some(metadata) = metadata {
+                    (
+                        metadata.data_type.into(),
+                        metadata.is_unsigned as _,
+                    )
+                } else if let Some(field) = field {
+                    (field.type_, is_field_unsigned(field))
+                } else {
+                    unreachable!("We've checked that we load field metadata for the case there is any none in types")
+                }
             })
             .map(BindData::for_output)
             .collect();
@@ -87,7 +120,17 @@ impl Binds {
     }
 
     pub fn field_data(&self, idx: usize) -> Option<MysqlValue<'_>> {
-        self.data[idx].bytes().map(MysqlValue::new)
+        let bind = &self.data[idx];
+
+        bind.bytes().map(|raw| {
+            MysqlValue::new(
+                raw,
+                MysqlTypeMetadata {
+                    data_type: bind.tpe.into(),
+                    is_unsigned: bind.is_unsigned != 0,
+                },
+            )
+        })
     }
 
     pub fn len(&self) -> usize {
@@ -111,7 +154,7 @@ impl BindData {
         let length = bytes.len() as libc::c_ulong;
 
         BindData {
-            tpe: mysql_type_to_ffi_type(tpe),
+            tpe: tpe.into(),
             bytes: bytes,
             length: length,
             is_null: is_null,
@@ -217,22 +260,64 @@ impl BindData {
     }
 }
 
-fn mysql_type_to_ffi_type(tpe: MysqlType) -> ffi::enum_field_types {
-    use self::ffi::enum_field_types::*;
+impl From<MysqlType> for ffi::enum_field_types {
+    fn from(tpe: MysqlType) -> Self {
+        use self::ffi::enum_field_types::*;
 
-    match tpe {
-        MysqlType::Tiny => MYSQL_TYPE_TINY,
-        MysqlType::Short => MYSQL_TYPE_SHORT,
-        MysqlType::Long => MYSQL_TYPE_LONG,
-        MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
-        MysqlType::Float => MYSQL_TYPE_FLOAT,
-        MysqlType::Double => MYSQL_TYPE_DOUBLE,
-        MysqlType::Time => MYSQL_TYPE_TIME,
-        MysqlType::Date => MYSQL_TYPE_DATE,
-        MysqlType::DateTime => MYSQL_TYPE_DATETIME,
-        MysqlType::Timestamp => MYSQL_TYPE_TIMESTAMP,
-        MysqlType::String => MYSQL_TYPE_STRING,
-        MysqlType::Blob => MYSQL_TYPE_BLOB,
+        match tpe {
+            MysqlType::Tiny => MYSQL_TYPE_TINY,
+            MysqlType::Short => MYSQL_TYPE_SHORT,
+            MysqlType::Long => MYSQL_TYPE_LONG,
+            MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
+            MysqlType::Float => MYSQL_TYPE_FLOAT,
+            MysqlType::Double => MYSQL_TYPE_DOUBLE,
+            MysqlType::Time => MYSQL_TYPE_TIME,
+            MysqlType::Date => MYSQL_TYPE_DATE,
+            MysqlType::DateTime => MYSQL_TYPE_DATETIME,
+            MysqlType::Timestamp => MYSQL_TYPE_TIMESTAMP,
+            MysqlType::String => MYSQL_TYPE_STRING,
+            MysqlType::Blob => MYSQL_TYPE_BLOB,
+        }
+    }
+}
+
+impl From<ffi::enum_field_types> for MysqlType {
+    fn from(tpe: ffi::enum_field_types) -> Self {
+        use self::ffi::enum_field_types::*;
+
+        match tpe {
+            MYSQL_TYPE_TINY => MysqlType::Tiny,
+            MYSQL_TYPE_SHORT => MysqlType::Short,
+            MYSQL_TYPE_LONG => MysqlType::Long,
+            MYSQL_TYPE_LONGLONG => MysqlType::LongLong,
+            MYSQL_TYPE_FLOAT => MysqlType::Float,
+            MYSQL_TYPE_DOUBLE => MysqlType::Double,
+            MYSQL_TYPE_TIME => MysqlType::Time,
+            MYSQL_TYPE_DATE => MysqlType::Date,
+            MYSQL_TYPE_DATETIME => MysqlType::DateTime,
+            MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
+            MYSQL_TYPE_STRING => MysqlType::String,
+            MYSQL_TYPE_BLOB => MysqlType::Blob,
+            MYSQL_TYPE_DECIMAL
+            | MYSQL_TYPE_NULL
+            | MYSQL_TYPE_INT24
+            | MYSQL_TYPE_YEAR
+            | MYSQL_TYPE_NEWDATE
+            | MYSQL_TYPE_VARCHAR
+            | MYSQL_TYPE_BIT
+            | MYSQL_TYPE_TIMESTAMP2
+            | MYSQL_TYPE_DATETIME2
+            | MYSQL_TYPE_TIME2
+            | MYSQL_TYPE_JSON
+            | MYSQL_TYPE_NEWDECIMAL
+            | MYSQL_TYPE_ENUM
+            | MYSQL_TYPE_SET
+            | MYSQL_TYPE_TINY_BLOB
+            | MYSQL_TYPE_MEDIUM_BLOB
+            | MYSQL_TYPE_LONG_BLOB
+            | MYSQL_TYPE_VAR_STRING
+            | MYSQL_TYPE_GEOMETRY => unimplemented!(),
+        }
     }
 }
 

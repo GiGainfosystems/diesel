@@ -74,7 +74,7 @@ impl<'a> HasRawValue<'a> for Mysql {
 }
 
 impl TypeMetadata for Mysql {
-    type TypeMetadata = MysqlTypeMetadata;
+    type TypeMetadata = Option<MysqlTypeMetadata>;
     type MetadataLookup = ();
 }
 

@@ -132,11 +132,11 @@ impl<ST> HasSqlType<Unsigned<ST>> for Mysql
 where
     Mysql: HasSqlType<ST>,
 {
-    fn metadata(lookup: &()) -> MysqlTypeMetadata {
-        MysqlTypeMetadata {
+    fn metadata(lookup: &()) -> Option<MysqlTypeMetadata> {
+        <Mysql as HasSqlType<ST>>::metadata(lookup).map(|m| MysqlTypeMetadata {
             is_unsigned: true,
-            ..<Mysql as HasSqlType<ST>>::metadata(lookup)
-        }
+            ..m
+        })
     }
 }
 

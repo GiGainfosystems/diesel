@@ -39,9 +39,9 @@ impl Statement {
 
     pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()>
     where
-        Iter: IntoIterator<Item = (MysqlTypeMetadata, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (Option<MysqlTypeMetadata>, Option<Vec<u8>>)>,
     {
-        let mut input_binds = Binds::from_input_data(binds);
+        let mut input_binds = Binds::from_input_data(binds)?;
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called
@@ -74,7 +74,7 @@ impl Statement {
     /// be called on this statement.
     pub unsafe fn results(
         &mut self,
-        types: Vec<MysqlTypeMetadata>,
+        types: Vec<Option<MysqlTypeMetadata>>,
     ) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
     }
