@@ -8,15 +8,17 @@ use crate::insertable::Insertable;
 use crate::query_builder::distinct_clause::*;
 use crate::query_builder::group_by_clause::*;
 use crate::query_builder::insert_statement::InsertFromSelect;
-use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 use crate::query_builder::limit_clause::*;
+use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 use crate::query_builder::locking_clause::*;
 use crate::query_builder::offset_clause::*;
 use crate::query_builder::order_clause::*;
 use crate::query_builder::select_clause::*;
 use crate::query_builder::update_statement::*;
 use crate::query_builder::where_clause::*;
-use crate::query_builder::{AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement};
+use crate::query_builder::{
+    AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement,
+};
 use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
@@ -337,12 +339,11 @@ impl<F, S, D, W, O, LOf, G, LC, LM, Modifier> ModifyLockDsl<Modifier>
     }
 }
 
-impl<'a, F, S, D, W, O, LOf, G, DB> BoxedDsl<'a, DB>
-    for SelectStatement<F, SelectClause<S>, D, W, O, LOf, G>
+impl<'a, F, S, D, W, O, LOf, G, DB> BoxedDsl<'a, DB> for SelectStatement<F, S, D, W, O, LOf, G>
 where
     Self: AsQuery,
     DB: Backend,
-    S: QueryFragment<DB> + SelectableExpression<F> + 'a,
+    S: IntoBoxedSelectClause<'a, DB, F>,
     D: QueryFragment<DB> + 'a,
     W: Into<BoxedWhereClause<'a, DB>>,
     O: Into<Option<Box<dyn QueryFragment<DB> + 'a>>>,
@@ -353,34 +354,7 @@ where
 
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(
-            Box::new(self.select.0),
-            self.from,
-            Box::new(self.distinct),
-            self.where_clause.into(),
-            self.order.into(),
-            self.limit_offset.into_boxed(),
-            Box::new(self.group_by),
-        )
-    }
-}
-
-impl<'a, F, D, W, O, LOf, G, DB> BoxedDsl<'a, DB>
-    for SelectStatement<F, DefaultSelectClause, D, W, O, LOf, G>
-where
-    Self: AsQuery,
-    DB: Backend,
-    F: QuerySource,
-    F::DefaultSelection: QueryFragment<DB> + 'a,
-    D: QueryFragment<DB> + 'a,
-    W: Into<BoxedWhereClause<'a, DB>>,
-    O: Into<Option<Box<dyn QueryFragment<DB> + 'a>>>,
-    LOf: IntoBoxedClause<'a, DB, BoxedClause = BoxedLimitOffsetClause<'a, DB>>,
-    G: QueryFragment<DB> + 'a,
-{
-    type Output = BoxedSelectStatement<'a, <F::DefaultSelection as Expression>::SqlType, F, DB>;
-    fn internal_into_boxed(self) -> Self::Output {
-        BoxedSelectStatement::new(
-            Box::new(self.from.default_selection()),
+            self.select.into_boxed(&self.from),
             self.from,
             Box::new(self.distinct),
             self.where_clause.into(),

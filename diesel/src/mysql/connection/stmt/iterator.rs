@@ -14,8 +14,16 @@ pub struct StatementIterator<'a> {
 #[allow(clippy::should_implement_trait)] // don't neet `Iterator` here
 impl<'a> StatementIterator<'a> {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(stmt: &'a mut Statement, types: Vec<MysqlTypeMetadata>) -> QueryResult<Self> {
-        let mut output_binds = Binds::from_output_types(types);
+    pub fn new(
+        stmt: &'a mut Statement,
+        types: Vec<Option<MysqlTypeMetadata>>,
+    ) -> QueryResult<Self> {
+        let mut output_binds = if types.iter().any(Option::is_none) {
+            let metadata = stmt.metadata()?;
+            Binds::from_output_types(types, Some(metadata.fields()))
+        } else {
+            Binds::from_output_types(types, None)
+        };
 
         execute_statement(stmt, &mut output_binds)?;
 
@@ -72,11 +80,7 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
             .stmt
             .metadata()
             .expect("Failed to get result metadata from the mysql backend");
-        let field = if self.col_idx == 0 {
-            metadata.fields()[0]
-        } else {
-            metadata.fields()[self.col_idx - 1]
-        };
+        let field = metadata.fields()[self.col_idx];
         unsafe {
             Some(CStr::from_ptr(field.name).to_str().expect(
                 "Diesel assumes that your mysql database uses the \

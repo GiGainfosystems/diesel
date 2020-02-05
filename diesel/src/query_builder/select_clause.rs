@@ -66,3 +66,41 @@ where
         source.default_selection().walk_ast(pass)
     }
 }
+
+/// An internal helper trait to convert different select clauses
+/// into their boxed counter part.
+///
+/// You normally don't need this trait, at least as long as you
+/// don't implement your own select clause representation
+pub trait IntoBoxedSelectClause<'a, DB, QS> {
+    /// The sql type of the select clause
+    type SqlType;
+
+    /// Convert the select clause into a the boxed representation
+    fn into_boxed(self, source: &QS) -> Box<dyn QueryFragment<DB> + 'a>;
+}
+
+impl<'a, DB, T, QS> IntoBoxedSelectClause<'a, DB, QS> for SelectClause<T>
+where
+    T: QueryFragment<DB> + SelectableExpression<QS> + 'a,
+    DB: Backend,
+{
+    type SqlType = T::SqlType;
+
+    fn into_boxed(self, _source: &QS) -> Box<dyn QueryFragment<DB> + 'a> {
+        Box::new(self.0)
+    }
+}
+
+impl<'a, DB, QS> IntoBoxedSelectClause<'a, DB, QS> for DefaultSelectClause
+where
+    QS: QuerySource,
+    QS::DefaultSelection: QueryFragment<DB> + 'a,
+    DB: Backend,
+{
+    type SqlType = <QS::DefaultSelection as Expression>::SqlType;
+
+    fn into_boxed(self, source: &QS) -> Box<dyn QueryFragment<DB> + 'a> {
+        Box::new(source.default_selection())
+    }
+}

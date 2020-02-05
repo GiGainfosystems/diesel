@@ -71,11 +71,11 @@ fn mysql_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
                     for diesel::mysql::Mysql
                 #where_clause
                 {
-                    fn metadata(_: &()) -> diesel::mysql::MysqlTypeMetadata {
-                        diesel::mysql::MysqlTypeMetadata {
+                    fn metadata(_: &()) -> std::option::Option<diesel::mysql::MysqlTypeMetadata> {
+                        std::option::Option::Some(diesel::mysql::MysqlTypeMetadata {
                             data_type: diesel::mysql::MysqlType::#ty,
                             is_unsigned: false,
-                        }
+                        })
                     }
                 }
             })
