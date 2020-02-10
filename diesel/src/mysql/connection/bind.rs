@@ -136,10 +136,6 @@ impl Binds {
     pub fn len(&self) -> usize {
         self.data.len()
     }
-
-    pub fn len(&self) -> usize {
-        self.data.len()
-    }
 }
 
 struct BindData {
